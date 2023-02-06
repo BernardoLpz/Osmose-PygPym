@@ -1,0 +1,111 @@
+import pymunk
+import pygame
+import pymunk.pygame_util
+from random import randint
+
+pygame.init()
+Largura, Altura = 800, 400
+window = pygame.display.set_mode((Largura, Altura))
+
+
+def Criar_Paredes(Espaço, Largura, Altura):
+
+    Parede = [[(Altura/2, Largura/2), (10, Altura/2), 3],
+              [(5, Largura/2), (10, Largura), 2],
+              [(795, Largura/2), (10, Largura), 2],
+              [(Altura/2, 5), (Altura, 10), 2],
+              [(Altura/2, 395), (Altura, 10), 2]]
+
+    for pos, tam, CT in Parede:
+        body = pymunk.Body(body_type=pymunk.Body.STATIC)
+        body.position = pos
+        shape = pymunk.Poly.create_box(body, tam)
+        shape.elasticity = 1
+        shape.friction = 0
+        shape.collision_type = CT
+        shape.color = (10, 100, 70, 5)
+        Espaço.add(body, shape)
+
+
+def Cria_Bolas(Espaço, Raio, Massa, Pos, Cor, Velocidade, CT):
+
+    body = pymunk.Body()
+    body.position = Pos
+    body.velocity = Velocidade
+    shape = pymunk.Circle(body, Raio)
+    shape.mass = Massa
+    shape.color = Cor
+    shape.collision_type = CT  # para ver a colisão
+    shape.elasticity = 1
+    shape.friction = 0
+    Espaço.add(body, shape)
+
+    return shape
+
+
+def draw(espaço, window, draw_options):
+    window.fill("white")
+
+    espaço.debug_draw(draw_options)
+
+    pygame.display.update()
+
+
+def HIT(arbiter, space, data):
+    print("Colisão ignorada")
+    return False
+
+
+def Rodar(espaço, Altura, Largura):
+
+    Z = 0
+    N1 = int(input("Quantas bolas de solvente você deseja no lado esquerdo? "))
+    N2 = int(input("Quantas bolas de soluto você deseja no lado esquerdo? "))
+    N3 = int(input("Quantas bolas de solvente você deseja no lado direito? "))
+    # ------------------- Taxa Quadro -------------------
+    clock = pygame.time.Clock()
+    fps = 60
+    dt = 1/fps
+
+    # ------------------- Config espaço ------------------
+    espaço = pymunk.Space()
+    espaço.gravity = (0, 0)
+
+    # ------------------- Cria os objetos -----------------
+    Criar_Paredes(espaço, Largura, Altura)
+
+    while Z < N1:
+        Cria_Bolas(espaço, 20, 200, (randint(50, 350), randint(50, 350)),
+                   (255, 255, 0, 100), (50*randint(0, 5), 50*randint(0, 5)), 2)
+        Z += 1
+    if Z == N1:
+        Z = 0
+    while Z < N2:
+        Cria_Bolas(espaço, 10, 50, (randint(50, 350), randint(50, 350)),
+                   (0, 255, 255, 100), (100*randint(0, 5), 100*randint(0, 5)), 1)
+        Z += 1
+    if Z == N2:
+        Z = 0
+    while Z < N3:
+        Cria_Bolas(espaço, 20, 200, (randint(450, 750), randint(50, 350)),
+                   (255, 255, 0, 100), (50*randint(0, 5), 50*randint(0, 5)), 2)
+        Z += 1
+
+    draw_options = pymunk.pygame_util.DrawOptions(
+        window)
+
+    handler = espaço.add_collision_handler(1, 3)
+    handler.begin = HIT
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return
+
+        draw(espaço, window, draw_options)
+        espaço.step(dt)
+        clock.tick(fps)
+
+
+Rodar(window, Largura, Altura)
+pygame.quit()
